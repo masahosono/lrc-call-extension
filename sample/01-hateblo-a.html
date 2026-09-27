@@ -1,0 +1,720 @@
+<!--
+  はてなブログ埋め込みサンプル A (1 記事にすべてを貼り付ける方式)
+  このファイルは tools/build-embed.js で自動生成しています。直接編集しないでください。
+
+  ■ 使い方
+    1. 記事の編集画面で「HTML編集」タブを開く
+       (「見たまま」「Markdown」「はてな記法」モードでは、[ ] などが記法として変換されることがあります)
+    2. このファイルの中身をすべて貼り付ける
+    3. data-video-id を YouTube の動画ID (または動画のURL) に書き換える
+    4. <script type="text/plain"> ～ </script> の間を、自分の clrc ファイルの中身に書き換える
+
+  ■ 注意
+    ・はてなブログには .clrc ファイルを置けないため、data-src は使えません。
+      歌詞は必ず <script type="text/plain"> の中に直接書いてください。
+    ・歌詞の中に「</script」という文字列は書けません。
+    ・1 つの記事に複数のプレイヤーを置く場合は、<div class="clrc-player"> ～ </div> を必要な数だけ並べます。
+      一番下の 2 つの <script> ～ </script> は、記事に 1 回だけ書けば十分です。
+    ・書き間違いを確認したいときは、<div> に data-debug="true" を付けると警告が表示されます。
+-->
+<p>コールはNANA CALL BOOK 2022 p16より<br>口上は水樹奈々コールwikiのコメントより https://w.atwiki.jp/nm_7/pages/36.html<br>※独断で勝手に混ぜています</p>
+
+<div class="clrc-player" data-video-id="PPSNnYSKkYs">
+<script type="text/plain">
+# パート定義
+[pt:L:label=歌詞|color=#ff7777]
+[pt:C:label=コール|color=#77ff77|holdsec=1]
+[pt:O:label=口上|color=#ffff77]
+[pt:J:label=跳び|color=#77ffff|holdsec=1]
+
+# 歌詞
+[00:00.00]#:イントロ口上
+[00:02.00]O:歌声聞いたその日から[00:05.00]
+[00:05.00]O:奈々は僕らのジュリエット[00:08.00]
+[00:09.00]O:歌と魔法の空間は[00:12.00]
+[00:12.00]O:皆(みな)が笑顔の桃源郷[00:16.00]
+[00:16.00]O:募る想いを放つから[00:20.00]
+[00:20.00]O:いつものように笑って奈々ちゃん[00:24.00]
+[00:24.00]#:1番
+[00:27.00]C:L.O.V.E<00:29.00>ラブリー奈々ちゃん[00:31.00]
+[00:37.50]C:奈々ちゃん[00:38.25]
+[00:55.00]J:Fuu![00:56.00]
+[00:58.50]J:Fuu![00:59.50]
+[01:09.50]J:Fuu![01:10.50]
+[01:13.50]J:Fuu![01:14.50]
+[01:28.00]C:FuuFuFuFuFuu![01:29.50]
+[01:35.50]C:smile for a juliet[01:37.00]
+[01:43.00]C:smile for a juliet[01:44.50]
+[01:57.50]J:FuuFuFuu![01:58.50]
+[02:14.00]#:2番
+[02:18.00]C:C.U.T.E<02:20.00>キュートな奈々ちゃん[02:21.50]
+[02:28.00]C:奈々ちゃん[02:28.75]
+[02:45.00]J:Fuu![02:46.00]
+[02:49.00]J:Fuu![02:50.00]
+[03:00.00]J:Fuu![03:01.00]
+[03:04.00]J:Fuu![03:05.00]
+[03:18.75]C:FuuFuFuFuFuu![03:20.25]
+[03:26.00]C:smile for a juliet[03:27.75]
+[03:33.25]C:smile for a juliet[03:35.00]
+[03:48.50]C:FuuFuFuFuFuu![03:50.00]
+[03:57.00]#:間奏
+[03:58.00]O:奈々ちゃんの恋のテレパシー[04:01.00]
+[04:01.00]O:心の奥に響いてる[04:05.00]
+[04:05.00]O:勇気を出してこの想い[04:08.50]
+[04:08.50]O:今すぐ君に伝えよう[04:12.50]
+[04:12.50]O:僕らも奈々ちゃん大好きさ[04:15.50]
+[04:16.50]J:Fuu![04:17.50]
+[04:22.00]C:smile for a juliet[04:23.75]
+[04:29.00]C:smile for a juliet[04:30.75]
+[04:43.50]J:FuuFuFuu![04:44.50]
+</script>
+</div>
+
+<script>
+/*!
+ * clrc-parser.js
+ * CLRC (.clrc) ファイルのパーサー。ファイル仕様は spec.md (Draft) を参照。
+ *
+ * 使い方:
+ *   const result = CLRC.parse(text);
+ *   // result.meta     : メタデータタグ ([ti:] [ar:] [offset:] など)
+ *   // result.parts    : パート定義 { ラベル名: { label, color, offcolor, scroll, holdsec } }
+ *   // result.lines    : 表示する歌詞行 (開始時間順)。"#:" の付加情報の行は info: true
+ *   // result.warnings : 仕様違反・解釈できなかった行 { line: 行番号, message }
+ *
+ * ブラウザでは window.CLRC.parse、Node.js では require('./clrc-parser').parse で使える。
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) {
+    module.exports = api;
+  } else {
+    root.CLRC = Object.assign(root.CLRC || {}, api);
+  }
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  // mm:ss.xx (パーサーは ss / ss.x / ss.xxx も受け付ける)
+  const TIME = '(\\d+):(\\d{1,2}(?:\\.\\d{1,3})?)';
+  const LINE_TIME_RE = new RegExp('^\\[' + TIME + '\\](.*)$');
+  const END_TIME_RE = new RegExp('\\[' + TIME + '\\]$');
+  const WORD_TIME_RE = new RegExp('<' + TIME + '>', 'g');
+  const PART_DEF_RE = /^\[pt:([^:\]]*):(.*)\]$/;
+  const META_TAG_RE = /^\[([A-Za-z]+):(.*)\]$/;
+  const LABEL_RE = /^([A-Z][A-Z0-9]*|#):/;
+  const PART_NAME_RE = /^[A-Z][A-Z0-9]*$/;
+  const EXTRA_LINE_TIME_RE = new RegExp('^\\[' + TIME + '\\]');
+
+  const DEFAULT_PART_NAME = 'default';
+  const BUILTIN_DEFAULT_PART = { label: null, color: '#ffffff', offcolor: '#777777', scroll: true, holdsec: 0 };
+  // "#:" は曲中の付加情報 (イントロ、1番、間奏など)。塗りつぶし・強調表示をしない
+  const INFO_PART_NAME = '#';
+  const BUILTIN_INFO_PART = { label: null, color: '#999999' };
+  const INFO_PART_KEYS = ['label', 'color'];
+
+  const toSeconds = (min, sec) => parseInt(min, 10) * 60 + parseFloat(sec);
+
+  function parsePartProps(propsText, lineNo, warn) {
+    const props = {};
+    propsText.split('|').forEach((pair) => {
+      if (pair.trim() === '') return;
+      const eq = pair.indexOf('=');
+      if (eq < 0) {
+        warn(lineNo, `パート定義の "${pair.trim()}" は "キー=値" の形式ではありません`);
+        return;
+      }
+      const key = pair.slice(0, eq).trim().toLowerCase();
+      const value = pair.slice(eq + 1).trim();
+      switch (key) {
+        case 'label':
+          props.label = value;
+          break;
+        case 'color':
+          props.color = value;
+          break;
+        case 'offcolor':
+          props.offcolor = value;
+          break;
+        case 'scroll':
+          if (value === 'true' || value === 'false') props.scroll = value === 'true';
+          else warn(lineNo, `scroll には true か false を指定してください (指定値: "${value}")`);
+          break;
+        case 'holdsec': {
+          const sec = Number(value);
+          if (value !== '' && Number.isFinite(sec) && sec >= 0) props.holdsec = sec;
+          else warn(lineNo, `holdsec には0以上の秒数を指定してください (指定値: "${value}")`);
+          break;
+        }
+        default:
+          warn(lineNo, `パート定義のキー "${key}" は未対応のため無視します`);
+      }
+    });
+    return props;
+  }
+
+  // 本文を <mm:ss.xx> で区切り、塗りつぶし用のセグメントに分ける
+  function parseBody(body, lineStart, displayEnd, lineNo, warn) {
+    const segments = [];
+    let hasWordTime = false;
+    let segStart = lineStart;
+    let text = '';
+    let cursor = 0;
+    let match;
+
+    WORD_TIME_RE.lastIndex = 0;
+    while ((match = WORD_TIME_RE.exec(body)) !== null) {
+      text += body.slice(cursor, match.index);
+      cursor = match.index + match[0].length;
+      const time = toSeconds(match[1], match[2]);
+      hasWordTime = true;
+      if (time < segStart) {
+        warn(lineNo, `<${match[1]}:${match[2]}> が直前の時間より前になっています`);
+      }
+      if (text !== '') {
+        segments.push({ text, start: segStart, end: time });
+        text = '';
+      }
+      segStart = time;
+    }
+    text += body.slice(cursor);
+
+    if (text !== '') {
+      if (!hasWordTime) {
+        // <> が無い行: 表示終了時間があれば行全体を1つとして塗りつぶす
+        segments.push({ text, start: lineStart, end: displayEnd !== null ? displayEnd : lineStart });
+      } else if (displayEnd !== null) {
+        segments.push({ text, start: segStart, end: displayEnd });
+      } else {
+        warn(lineNo, '<mm:ss.xx> を使う行は、行末に <mm:ss.xx> か [mm:ss.xx] が必要です');
+        segments.push({ text, start: segStart, end: segStart });
+      }
+    }
+
+    return { segments, hasWordTime };
+  }
+
+  function parse(source) {
+    const meta = {};
+    const parts = {};
+    const rawLines = [];
+    const warnings = [];
+    const warn = (line, message) => warnings.push({ line, message });
+
+    String(source).replace(/^﻿/, '').split(/\r\n|\r|\n/).forEach((original, i) => {
+      const lineNo = i + 1;
+      const line = original.trim();
+      if (line === '' || line.startsWith('#')) return;
+
+      const partDef = line.match(PART_DEF_RE);
+      if (partDef) {
+        const name = partDef[1].trim();
+        if (name !== DEFAULT_PART_NAME && name !== INFO_PART_NAME && !PART_NAME_RE.test(name)) {
+          warn(lineNo, `パート名 "${name}" は使えません (先頭は半角英大文字、2文字目以降は半角英大文字か数字。または default、#)`);
+          return;
+        }
+        if (parts[name]) warn(lineNo, `パート "${name}" が再定義されています (後の定義を使います)`);
+        const props = parsePartProps(partDef[2], lineNo, warn);
+        if (name === INFO_PART_NAME) {
+          Object.keys(props).filter((key) => !INFO_PART_KEYS.includes(key)).forEach((key) => {
+            warn(lineNo, `パート "#" では ${key} は使えないため無視します (使えるのは label と color のみ)`);
+            delete props[key];
+          });
+        }
+        parts[name] = props;
+        return;
+      }
+
+      const timed = line.match(LINE_TIME_RE);
+      if (timed) {
+        const start = toSeconds(timed[1], timed[2]);
+        let body = timed[3];
+        let part = null;
+        let displayEnd = null;
+
+        if (EXTRA_LINE_TIME_RE.test(body)) {
+          warn(lineNo, '1行に複数の行タイムスタンプは書けないため無視します (タイムスタンプごとに行を分けてください)');
+          return;
+        }
+        const label = body.match(LABEL_RE);
+        if (label) {
+          part = label[1];
+          body = body.slice(label[0].length);
+        }
+        if (part === INFO_PART_NAME) {
+          WORD_TIME_RE.lastIndex = 0;
+          if (WORD_TIME_RE.test(body) || END_TIME_RE.test(body)) {
+            warn(lineNo, '"#:" の行では <mm:ss.xx> と表示終了時間は使えないため無視します');
+          }
+          const text = body.replace(WORD_TIME_RE, '').replace(END_TIME_RE, '');
+          if (text === '') {
+            warn(lineNo, '本文が空の歌詞行は使えないため無視します');
+            return;
+          }
+          rawLines.push({ lineNo, part, start, displayEnd: null, segments: [{ text, start, end: start }], info: true });
+          return;
+        }
+        const end = body.match(END_TIME_RE);
+        if (end) {
+          displayEnd = toSeconds(end[1], end[2]);
+          body = body.slice(0, end.index);
+          if (displayEnd <= start) warn(lineNo, '表示終了時間が表示開始時間以前になっています');
+        }
+
+        const { segments, hasWordTime } = parseBody(body, start, displayEnd, lineNo, warn);
+        if (segments.length === 0) {
+          warn(lineNo, '本文が空の歌詞行は使えないため無視します (表示を終えるには行末に [mm:ss.xx] を書いてください)');
+          return;
+        }
+        rawLines.push({ lineNo, part, start, displayEnd, segments, hasWordTime });
+        return;
+      }
+
+      const tag = line.match(META_TAG_RE);
+      if (tag) {
+        const key = tag[1].toLowerCase();
+        const value = tag[2].trim();
+        if (key === 'offset') {
+          const ms = Number(value);
+          if (value !== '' && Number.isFinite(ms)) meta.offset = ms;
+          else warn(lineNo, `offset にはミリ秒の数値を指定してください (指定値: "${value}")`);
+        } else {
+          meta[key] = value;
+        }
+        return;
+      }
+
+      warn(lineNo, '解釈できない行のため無視します');
+    });
+
+    // [offset:+500] は歌詞を 0.5 秒早く表示する (一般的なLRCと同じ)
+    const shift = (meta.offset || 0) / 1000;
+    if (shift !== 0) {
+      rawLines.forEach((l) => {
+        l.start -= shift;
+        if (l.displayEnd !== null) l.displayEnd -= shift;
+        l.segments.forEach((s) => { s.start -= shift; s.end -= shift; });
+      });
+    }
+
+    // Array.prototype.sort は安定ソートなので、同時刻の行はファイル内の順序を保つ
+    rawLines.sort((a, b) => a.start - b.start);
+
+    const partKey = (l) => (l.part === null ? DEFAULT_PART_NAME : l.part);
+    const defaultPart = Object.assign({}, BUILTIN_DEFAULT_PART, parts[DEFAULT_PART_NAME]);
+    const warnedParts = new Set();
+
+    const infoPart = Object.assign({}, BUILTIN_INFO_PART, parts[INFO_PART_NAME]);
+
+    const lines = [];
+    rawLines.forEach((l, index) => {
+      if (l.info) {
+        lines.push({
+          lineNo: l.lineNo,
+          part: INFO_PART_NAME,
+          info: true,
+          label: infoPart.label || null,
+          color: infoPart.color,
+          offcolor: infoPart.color,
+          wipe: false,
+          start: l.start,
+          end: l.start,
+          segments: l.segments,
+        });
+        return;
+      }
+      if (l.part !== null && !parts[l.part] && !warnedParts.has(l.part)) {
+        warnedParts.add(l.part);
+        warn(l.lineNo, `パート "${l.part}" は定義されていないため default の設定を使います`);
+      }
+      const config = Object.assign({}, defaultPart, l.part !== null ? parts[l.part] : null);
+      const displayLabel = l.part !== null && !(parts[l.part] && parts[l.part].label !== undefined)
+        ? l.part
+        : config.label;
+
+      let end;
+      if (l.displayEnd !== null) {
+        end = l.displayEnd + config.holdsec;
+      } else {
+        // 表示終了時間が無い行は、同じパートで後から始まる行が始まるまで表示する
+        const next = rawLines.slice(index + 1).find((n) => partKey(n) === partKey(l) && n.start > l.start);
+        end = next ? next.start : Infinity;
+      }
+
+      lines.push({
+        lineNo: l.lineNo,
+        part: partKey(l),
+        info: false,
+        label: displayLabel || null,
+        color: config.color,
+        offcolor: config.offcolor,
+        wipe: config.scroll && (l.hasWordTime || l.displayEnd !== null),
+        start: l.start,
+        end,
+        segments: l.segments,
+      });
+    });
+
+    warnings.sort((a, b) => a.line - b.line);
+    return { meta, parts, lines, warnings };
+  }
+
+  return { parse };
+});
+</script>
+<script>
+/*!
+ * clrc-player.js
+ * YouTube 動画の再生に同期して CLRC ファイルの歌詞を表示する。
+ * 先に clrc-parser.js を読み込んでおくこと。
+ *
+ * 使い方 (どちらか一方):
+ *   <div class="clrc-player" data-video-id="動画ID" data-src="song.clrc"></div>
+ *
+ *   <div class="clrc-player" data-video-id="動画ID">
+ *     <script type="text/plain">
+ *     [00:10.00]C:歌詞...
+ *     <\/script>
+ *   </div>
+ *
+ * data-video-id には動画の URL をそのまま書いてもよい。
+ * data-debug="true" を付けると、clrc ファイルの警告を歌詞の下に表示する。
+ */
+(function () {
+  'use strict';
+
+  const STYLE_ID = 'clrc-player-style';
+  const USER_SCROLL_PAUSE_MS = 3000;
+
+  const CSS = `
+.clrc-player {
+  width: 100%;
+  max-width: 640px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  overflow: hidden;
+  margin: 0 auto;
+}
+.clrc-video {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  background-color: #000;
+}
+.clrc-video > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.clrc-lyrics {
+  height: 300px;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: #222;
+  position: relative;
+  line-height: 1.5;
+}
+.clrc-line {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 12px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+.clrc-line:hover {
+  opacity: 0.8;
+}
+.clrc-line.active {
+  opacity: 1;
+}
+.clrc-line.clrc-info {
+  opacity: 1;
+}
+.clrc-line.clrc-info:hover {
+  opacity: 0.8;
+}
+.clrc-info-text {
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+.clrc-part {
+  font-size: 0.8em;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 10px;
+  color: #fff;
+  white-space: nowrap;
+}
+.clrc-seg {
+  font-size: 1.1rem;
+  font-weight: bold;
+  white-space: pre-wrap;
+  --progress: 0%;
+  --active-color: #ffffff;
+  --default-color: #777777;
+  background: linear-gradient(
+    to right,
+    var(--active-color) 0%,
+    var(--active-color) var(--progress),
+    var(--default-color) var(--progress),
+    var(--default-color) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+.clrc-message {
+  color: #ff9999;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+`;
+
+  function injectStyle() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = CSS;
+    document.head.appendChild(style);
+  }
+
+  // 動画 ID のほか、watch / youtu.be / embed / shorts / live の URL を受け付ける
+  function extractVideoId(value) {
+    const text = (value || '').trim();
+    const match = text.match(/(?:[?&]v=|youtu\.be\/|\/embed\/|\/shorts\/|\/live\/)([\w-]{11})/);
+    return match ? match[1] : text;
+  }
+
+  let youTubeApiPromise = null;
+  function loadYouTubeAPI() {
+    if (youTubeApiPromise) return youTubeApiPromise;
+    youTubeApiPromise = new Promise((resolve) => {
+      const ready = () => typeof YT !== 'undefined' && typeof YT.Player === 'function';
+      if (!ready() && !document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+      // onYouTubeIframeAPIReady は他のスクリプトと取り合いになるので使わずに待つ
+      (function wait() {
+        if (ready()) resolve(YT);
+        else setTimeout(wait, 100);
+      })();
+    });
+    return youTubeApiPromise;
+  }
+
+  async function loadSource(el) {
+    const src = el.dataset.src;
+    if (src) {
+      let res;
+      try {
+        res = await fetch(src);
+      } catch (e) {
+        throw new Error(
+          `${src} を読み込めませんでした。\n` +
+          'HTML ファイルをパソコン上で直接開いている場合は、Web サーバーに置いて開くか、' +
+          '<script type="text/plain"> に歌詞を直接書く方式を使ってください。'
+        );
+      }
+      if (!res.ok) throw new Error(`${src} を読み込めませんでした (HTTP ${res.status})`);
+      return res.text();
+    }
+    const inline = el.querySelector('script[type="text/plain"]');
+    if (inline) return inline.textContent;
+    throw new Error(
+      '歌詞データが見つかりません。data-src 属性でファイルを指定するか、' +
+      '<script type="text/plain"> の中に歌詞を書いてください。'
+    );
+  }
+
+  class ClrcPlayer {
+    constructor(el) {
+      this.el = el;
+      this.player = null;
+      this.items = [];
+      this.focused = null;
+      this.needsScroll = false;
+      this.userScrolling = false;
+      this.scrollTimer = null;
+    }
+
+    async init() {
+      const videoId = extractVideoId(this.el.dataset.videoId);
+      const source = await loadSource(this.el);
+      const { lines, warnings } = CLRC.parse(source);
+
+      warnings.forEach((w) => console.warn(`[clrc] ${w.line}行目: ${w.message}`));
+
+      this.el.textContent = '';
+      const video = document.createElement('div');
+      video.className = 'clrc-video';
+      const playerHost = document.createElement('div');
+      video.appendChild(playerHost);
+      this.lyricsBox = document.createElement('div');
+      this.lyricsBox.className = 'clrc-lyrics';
+      this.el.append(video, this.lyricsBox);
+
+      this.renderLines(lines);
+      if (this.el.dataset.debug === 'true' && warnings.length > 0) {
+        this.showMessage(warnings.map((w) => `${w.line}行目: ${w.message}`).join('\n'));
+      }
+      this.bindUserScroll();
+
+      if (!videoId) throw new Error('data-video-id に YouTube の動画 ID を指定してください。');
+
+      const YT = await loadYouTubeAPI();
+      this.player = new YT.Player(playerHost, {
+        videoId,
+        playerVars: { playsinline: 1, rel: 0 },
+      });
+      requestAnimationFrame(() => this.tick());
+    }
+
+    renderLines(lines) {
+      this.items = lines.map((line) => {
+        const lineEl = document.createElement('div');
+        lineEl.className = line.info ? 'clrc-line clrc-info' : 'clrc-line';
+        lineEl.addEventListener('click', () => this.seek(line.start));
+
+        if (line.label) {
+          const labelEl = document.createElement('span');
+          labelEl.className = 'clrc-part';
+          labelEl.textContent = line.label;
+          labelEl.style.backgroundColor = line.color;
+          lineEl.appendChild(labelEl);
+        }
+
+        const textWrap = document.createElement('span');
+        if (line.info) {
+          // 付加情報の行は塗りつぶし・強調表示をしない
+          const infoEl = document.createElement('span');
+          infoEl.className = 'clrc-info-text';
+          infoEl.textContent = line.segments.map((seg) => seg.text).join('');
+          infoEl.style.color = line.color;
+          textWrap.appendChild(infoEl);
+          lineEl.appendChild(textWrap);
+          this.lyricsBox.appendChild(lineEl);
+          return { line, lineEl, segEls: [], progress: [], active: false };
+        }
+
+        const segEls = line.segments.map((seg) => {
+          const segEl = document.createElement('span');
+          segEl.className = 'clrc-seg';
+          segEl.textContent = seg.text;
+          segEl.style.setProperty('--active-color', line.color);
+          segEl.style.setProperty('--default-color', line.offcolor);
+          textWrap.appendChild(segEl);
+          return segEl;
+        });
+        lineEl.appendChild(textWrap);
+        this.lyricsBox.appendChild(lineEl);
+
+        return { line, lineEl, segEls, progress: segEls.map(() => 0), active: false };
+      });
+    }
+
+    showMessage(message) {
+      const el = document.createElement('div');
+      el.className = 'clrc-message';
+      el.textContent = message;
+      (this.lyricsBox || this.el).appendChild(el);
+    }
+
+    seek(time) {
+      if (!this.player || typeof this.player.seekTo !== 'function') return;
+      this.player.seekTo(Math.max(0, time), true);
+      this.player.playVideo();
+    }
+
+    bindUserScroll() {
+      const onUserScroll = () => {
+        this.userScrolling = true;
+        clearTimeout(this.scrollTimer);
+        this.scrollTimer = setTimeout(() => {
+          this.userScrolling = false;
+          this.needsScroll = true;
+        }, USER_SCROLL_PAUSE_MS);
+      };
+      this.lyricsBox.addEventListener('wheel', onUserScroll, { passive: true });
+      this.lyricsBox.addEventListener('touchmove', onUserScroll, { passive: true });
+    }
+
+    tick() {
+      if (this.player && typeof this.player.getCurrentTime === 'function') {
+        this.update(this.player.getCurrentTime());
+      }
+      requestAnimationFrame(() => this.tick());
+    }
+
+    update(time) {
+      let focused = null;
+
+      this.items.forEach((item) => {
+        const { line } = item;
+        if (line.info) return;
+        const active = time >= line.start && time < line.end;
+        if (active !== item.active) {
+          item.lineEl.classList.toggle('active', active);
+          item.active = active;
+        }
+        // 開始時間順に並んでいるので、最後に見つかった行が一番新しい行
+        if (active) focused = item;
+
+        line.segments.forEach((seg, i) => {
+          let progress = 0;
+          if (active) {
+            if (!line.wipe || time >= seg.end) progress = 100;
+            else if (time > seg.start) progress = ((time - seg.start) / (seg.end - seg.start)) * 100;
+          }
+          if (progress !== item.progress[i]) {
+            item.segEls[i].style.setProperty('--progress', `${progress}%`);
+            item.progress[i] = progress;
+          }
+        });
+      });
+
+      if (focused !== this.focused) {
+        this.focused = focused;
+        this.needsScroll = true;
+      }
+      if (this.needsScroll && this.focused && !this.userScrolling) {
+        const el = this.focused.lineEl;
+        const top = el.offsetTop + el.clientHeight / 2 - this.lyricsBox.clientHeight / 2;
+        this.lyricsBox.scrollTo({ top, behavior: 'smooth' });
+        this.needsScroll = false;
+      }
+    }
+  }
+
+  function initPlayers() {
+    injectStyle();
+    document.querySelectorAll('.clrc-player').forEach((el) => {
+      if (el.clrcPlayer) return;
+      const player = new ClrcPlayer(el);
+      el.clrcPlayer = player;
+      if (typeof CLRC === 'undefined' || typeof CLRC.parse !== 'function') {
+        player.showMessage('clrc-parser.js が読み込まれていません。clrc-player.js より前に読み込んでください。');
+        return;
+      }
+      player.init().catch((err) => {
+        console.error('[clrc]', err);
+        player.showMessage(err.message);
+      });
+    });
+  }
+
+  window.CLRC = Object.assign(window.CLRC || {}, { initPlayers });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPlayers);
+  } else {
+    initPlayers();
+  }
+})();
+</script>
